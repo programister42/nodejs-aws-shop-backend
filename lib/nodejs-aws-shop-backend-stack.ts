@@ -18,7 +18,7 @@ export class NodejsAwsShopBackendStack extends Stack {
 			{
 				runtime: aws_lambda.Runtime.NODEJS_20_X,
 				code: aws_lambda.Code.fromAsset("lambdas"),
-				handler: "getProductsList.getProductsList",
+				handler: "get-products-list.getProductsList",
 				environment: {
 					PRODUCTS: JSON.stringify(products),
 				},
@@ -31,17 +31,19 @@ export class NodejsAwsShopBackendStack extends Stack {
 			{
 				runtime: aws_lambda.Runtime.NODEJS_20_X,
 				code: aws_lambda.Code.fromAsset("lambdas"),
-				handler: "getProductById.getProductById",
+				handler: "get-product-by-id.getProductById",
 				environment: {
 					PRODUCTS: JSON.stringify(products),
 				},
 			},
 		);
 
-		const api = new aws_apigateway.RestApi(
+		const api = new aws_apigateway.LambdaRestApi(
 			this,
 			"nodejs-aws-shop-backend-api",
 			{
+				handler: getProductsListLambda,
+				proxy: false,
 				defaultCorsPreflightOptions: {
 					allowOrigins: aws_apigateway.Cors.ALL_ORIGINS,
 					allowMethods: aws_apigateway.Cors.ALL_METHODS,
