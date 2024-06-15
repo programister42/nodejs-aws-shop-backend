@@ -1,0 +1,207 @@
+{
+	"swagger": "2.0",
+	"info": {
+		"version": "2024-06-15T11:44:45Z",
+		"title": "nodejs-aws-shop-backend-api"
+	},
+	"host": "6d44foqi71.execute-api.us-east-1.amazonaws.com",
+	"basePath": "/prod",
+	"schemes": ["https"],
+	"paths": {
+		"/": {
+			"options": {
+				"consumes": ["application/json"],
+				"responses": {
+					"204": {
+						"description": "204 response",
+						"headers": {
+							"Access-Control-Allow-Origin": {
+								"type": "string"
+							},
+							"Access-Control-Allow-Methods": {
+								"type": "string"
+							},
+							"Access-Control-Allow-Headers": {
+								"type": "string"
+							}
+						}
+					}
+				},
+				"x-amazon-apigateway-integration": {
+					"type": "mock",
+					"responses": {
+						"default": {
+							"statusCode": "204",
+							"responseParameters": {
+								"method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'",
+								"method.response.header.Access-Control-Allow-Headers": "'*'",
+								"method.response.header.Access-Control-Allow-Origin": "'*'"
+							}
+						}
+					},
+					"requestTemplates": {
+						"application/json": "{ statusCode: 200 }"
+					},
+					"passthroughBehavior": "when_no_match"
+				}
+			}
+		},
+		"/products": {
+			"get": {
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"schema": {
+							"type": "array",
+							"items": {
+								"$ref": "#/definitions/Product"
+							}
+						}
+					}
+				},
+				"x-amazon-apigateway-integration": {
+					"type": "aws_proxy",
+					"httpMethod": "POST",
+					"uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:573634406871:function:NodejsAwsShopBackendStack-getproductslistlambda8C4-yQXhs1OLeLzt/invocations",
+					"passthroughBehavior": "when_no_match"
+				}
+			},
+			"options": {
+				"consumes": ["application/json"],
+				"responses": {
+					"204": {
+						"description": "204 response",
+						"headers": {
+							"Access-Control-Allow-Origin": {
+								"type": "string"
+							},
+							"Access-Control-Allow-Methods": {
+								"type": "string"
+							},
+							"Access-Control-Allow-Headers": {
+								"type": "string"
+							}
+						}
+					}
+				},
+				"x-amazon-apigateway-integration": {
+					"type": "mock",
+					"responses": {
+						"default": {
+							"statusCode": "204",
+							"responseParameters": {
+								"method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'",
+								"method.response.header.Access-Control-Allow-Headers": "'*'",
+								"method.response.header.Access-Control-Allow-Origin": "'*'"
+							}
+						}
+					},
+					"requestTemplates": {
+						"application/json": "{ statusCode: 200 }"
+					},
+					"passthroughBehavior": "when_no_match"
+				}
+			}
+		},
+		"/products/{id}": {
+			"get": {
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"type": "string"
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"schema": {
+							"$ref": "#/definitions/Product"
+						}
+					},
+					"404": {
+						"description": "Product not found",
+						"schema": {
+							"type": "object",
+							"properties": {
+								"message": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				},
+				"x-amazon-apigateway-integration": {
+					"type": "aws_proxy",
+					"httpMethod": "POST",
+					"uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:573634406871:function:NodejsAwsShopBackendStack-getproductbyidlambda6FBE-8XwfiFtCoFQ0/invocations",
+					"passthroughBehavior": "when_no_match"
+				}
+			},
+			"options": {
+				"consumes": ["application/json"],
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"type": "string"
+					}
+				],
+				"responses": {
+					"204": {
+						"description": "204 response",
+						"headers": {
+							"Access-Control-Allow-Origin": {
+								"type": "string"
+							},
+							"Access-Control-Allow-Methods": {
+								"type": "string"
+							},
+							"Access-Control-Allow-Headers": {
+								"type": "string"
+							}
+						}
+					}
+				},
+				"x-amazon-apigateway-integration": {
+					"type": "mock",
+					"responses": {
+						"default": {
+							"statusCode": "204",
+							"responseParameters": {
+								"method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'",
+								"method.response.header.Access-Control-Allow-Headers": "'*'",
+								"method.response.header.Access-Control-Allow-Origin": "'*'"
+							}
+						}
+					},
+					"requestTemplates": {
+						"application/json": "{ statusCode: 200 }"
+					},
+					"passthroughBehavior": "when_no_match"
+				}
+			}
+		}
+	},
+	"definitions": {
+		"Product": {
+			"type": "object",
+			"properties": {
+				"id": {
+					"type": "string"
+				},
+				"title": {
+					"type": "string"
+				},
+				"description": {
+					"type": "string"
+				},
+				"price": {
+					"type": "number"
+				}
+			}
+		}
+	}
+}
