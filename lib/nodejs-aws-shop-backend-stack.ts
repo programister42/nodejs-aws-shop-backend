@@ -8,23 +8,23 @@ import {
 } from "aws-cdk-lib";
 import type { Construct } from "constructs";
 
-export class NodejsAwsShopBackendStack extends Stack {
+export class NodejsAWSShopBackendStack extends Stack {
 	constructor(scope: Construct, id: string, props?: StackProps) {
 		super(scope, id, props);
 
 		const productTable = new aws_dynamodb.Table(
 			this,
-			"nodejs-aws-shop-products",
+			"NodejsAWSShopProductTable",
 			{
-				tableName: "nodejs-aws-shop-products",
+				tableName: "NodejsAWSShopProductTable",
 				partitionKey: { name: "id", type: aws_dynamodb.AttributeType.STRING },
 				billingMode: aws_dynamodb.BillingMode.PAY_PER_REQUEST,
 				removalPolicy: RemovalPolicy.DESTROY,
 			},
 		);
 
-		const stockTable = new aws_dynamodb.Table(this, "nodejs-aws-shop-stocks", {
-			tableName: "nodejs-aws-shop-stocks",
+		const stockTable = new aws_dynamodb.Table(this, "NodejsAWSShopStockTable", {
+			tableName: "NodejsAWSShopStockTable",
 			partitionKey: {
 				name: "product_id",
 				type: aws_dynamodb.AttributeType.STRING,
@@ -35,9 +35,9 @@ export class NodejsAwsShopBackendStack extends Stack {
 
 		const getProductsListLambda = new aws_lambda.Function(
 			this,
-			"get-products-list-lambda",
+			"NodejsAWSShopGetProductsListLambda",
 			{
-				functionName: "get-products-list",
+				functionName: "NodejsAWSShopGetProductsListLambda",
 				runtime: aws_lambda.Runtime.NODEJS_20_X,
 				code: aws_lambda.Code.fromAsset("lambdas"),
 				handler: "get-products-list.getProductsList",
@@ -52,9 +52,9 @@ export class NodejsAwsShopBackendStack extends Stack {
 
 		const getProductByIdLambda = new aws_lambda.Function(
 			this,
-			"get-product-by-id-lambda",
+			"NodejsAWSShopGetProductByIdLambda",
 			{
-				functionName: "get-product-by-id",
+				functionName: "NodejsAWSShopGetProductByIdLambda",
 				runtime: aws_lambda.Runtime.NODEJS_20_X,
 				code: aws_lambda.Code.fromAsset("lambdas"),
 				handler: "get-product-by-id.getProductById",
@@ -69,9 +69,9 @@ export class NodejsAwsShopBackendStack extends Stack {
 
 		const createProductLambda = new aws_lambda.Function(
 			this,
-			"CreateProductLambda",
+			"NodejsAWSShopCreateProductLambda",
 			{
-				functionName: "create-product",
+				functionName: "NodejsAWSShopCreateProductLambda",
 				runtime: aws_lambda.Runtime.NODEJS_20_X,
 				code: aws_lambda.Code.fromAsset("lambdas"),
 				handler: "create-product.createProduct",
@@ -86,8 +86,9 @@ export class NodejsAwsShopBackendStack extends Stack {
 
 		const api = new aws_apigateway.LambdaRestApi(
 			this,
-			"nodejs-aws-shop-backend-api",
+			"NodejsAWSShopBackendApi",
 			{
+				restApiName: "NodejsAWSShopBackendApi",
 				handler: getProductsListLambda,
 				proxy: false,
 				defaultCorsPreflightOptions: {
@@ -98,12 +99,12 @@ export class NodejsAwsShopBackendStack extends Stack {
 			},
 		);
 
-		const productModel = api.addModel("product-model", {
+		const productModel = api.addModel("NodejsAWSShopProductModel", {
 			contentType: "application/json",
-			modelName: "ProductModel",
+			modelName: "NodejsAWSShopProductModel",
 			schema: {
 				schema: aws_apigateway.JsonSchemaVersion.DRAFT4,
-				title: "productModel",
+				title: "NodejsAWSShopProductModel",
 				type: aws_apigateway.JsonSchemaType.OBJECT,
 				properties: {
 					title: { type: aws_apigateway.JsonSchemaType.STRING, pattern: "\\S" },
@@ -118,9 +119,10 @@ export class NodejsAwsShopBackendStack extends Stack {
 			},
 		});
 
-		const createProductRequestValidator = api.addRequestValidator(
-			"create-product-request-validator",
+		const requestBodyValidator = api.addRequestValidator(
+			"NodejsAWSShopRequestBodyValidator",
 			{
+				requestValidatorName: "NodejsAWSShopRequestBodyValidator",
 				validateRequestBody: true,
 			},
 		);
@@ -137,7 +139,7 @@ export class NodejsAwsShopBackendStack extends Stack {
 				requestModels: {
 					"application/json": productModel,
 				},
-				requestValidator: createProductRequestValidator,
+				requestValidator: requestBodyValidator,
 			},
 		);
 

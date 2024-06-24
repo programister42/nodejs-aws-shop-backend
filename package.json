@@ -10,7 +10,7 @@
 		"test": "jest",
 		"cdk": "cdk",
 		"deploy": "cdk deploy",
-		"fill-tables": "PRODUCT_TABLE_NAME=\"nodejs-aws-shop-products\" STOCK_TABLE_NAME=\"nodejs-aws-shop-stocks\" node ./utils/fill-tables.js"
+		"fill-tables": "PRODUCT_TABLE_NAME=\"NodejsAWSShopProductTable\" STOCK_TABLE_NAME=\"NodejsAWSShopStockTable\" node ./utils/fill-tables.js"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.8.1",
