@@ -106,10 +106,13 @@ export class NodejsAwsShopBackendStack extends Stack {
 				title: "productModel",
 				type: aws_apigateway.JsonSchemaType.OBJECT,
 				properties: {
-					title: { type: aws_apigateway.JsonSchemaType.STRING },
-					description: { type: aws_apigateway.JsonSchemaType.STRING },
-					price: { type: aws_apigateway.JsonSchemaType.NUMBER },
-					count: { type: aws_apigateway.JsonSchemaType.NUMBER },
+					title: { type: aws_apigateway.JsonSchemaType.STRING, pattern: "\\S" },
+					description: {
+						type: aws_apigateway.JsonSchemaType.STRING,
+						pattern: "\\S",
+					},
+					price: { type: aws_apigateway.JsonSchemaType.NUMBER, minimum: 0 },
+					count: { type: aws_apigateway.JsonSchemaType.NUMBER, minimum: 0 },
 				},
 				required: ["title", "price", "count"],
 			},

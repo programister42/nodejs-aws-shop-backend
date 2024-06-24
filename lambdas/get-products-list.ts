@@ -38,7 +38,7 @@ export const getProductsList: Handler = async (
 			const stock = stocks.find((stock) => stock.product_id === product.id);
 			return {
 				...product,
-				stock: stock?.stock,
+				count: stock?.count,
 			};
 		});
 
