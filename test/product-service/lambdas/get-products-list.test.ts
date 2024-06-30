@@ -1,7 +1,7 @@
 import type { APIGatewayProxyResult, Context } from "aws-lambda";
 
-import { getProductsList } from "../../lambdas/get-products-list";
-import type { Product } from "../../types/product";
+import { getProductsList } from "../../../product-service/lambdas/get-products-list";
+import type { Product } from "../../../product-service/types/product";
 
 describe("getProductsList", () => {
 	// getProductsList parameters
