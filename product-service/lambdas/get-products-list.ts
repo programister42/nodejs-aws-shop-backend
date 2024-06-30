@@ -6,8 +6,6 @@ import type {
 	Handler,
 } from "aws-lambda";
 
-import { createResponse } from "./shared/create-response";
-
 const ddbClient = new DynamoDBClient();
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 
@@ -42,8 +40,26 @@ export const getProductsList: Handler = async (
 			};
 		});
 
-		return createResponse(200, productsWithStock);
+		return {
+			statusCode: 200,
+			headers: {
+				"Access-Control-Allow-Origin": "*",
+				"Access-Control-Allow-Methods": "GET",
+				"Access-Control-Allow-Headers": "Content-Type",
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(productsWithStock),
+		};
 	} catch (error: unknown) {
-		return createResponse(500, { message: "Internal server error" });
+		return {
+			statusCode: 500,
+			headers: {
+				"Access-Control-Allow-Origin": "*",
+				"Access-Control-Allow-Methods": "GET",
+				"Access-Control-Allow-Headers": "Content-Type",
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({ message: "Internal server error" }),
+		};
 	}
 };

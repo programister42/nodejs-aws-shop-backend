@@ -10,8 +10,6 @@ import type {
 	Handler,
 } from "aws-lambda";
 
-import { createResponse } from "./shared/create-response";
-
 const ddbClient = new DynamoDBClient();
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 
@@ -54,8 +52,26 @@ export const createProduct: Handler = async (
 
 		await ddbDocClient.send(command);
 
-		return createResponse(201, { message: "Product created" });
+		return {
+			statusCode: 201,
+			headers: {
+				"Access-Control-Allow-Origin": "*",
+				"Access-Control-Allow-Methods": "POST",
+				"Access-Control-Allow-Headers": "Content-Type",
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({ message: "Product created" }),
+		};
 	} catch (error: unknown) {
-		return createResponse(500, { message: "Internal server error" });
+		return {
+			statusCode: 500,
+			headers: {
+				"Access-Control-Allow-Origin": "*",
+				"Access-Control-Allow-Methods": "POST",
+				"Access-Control-Allow-Headers": "Content-Type",
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({ message: "Internal server error" }),
+		};
 	}
 };

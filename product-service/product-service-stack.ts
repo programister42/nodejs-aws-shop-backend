@@ -8,7 +8,7 @@ import {
 } from "aws-cdk-lib";
 import type { Construct } from "constructs";
 
-export class NodejsAWSShopBackendStack extends Stack {
+export class ProductServiceStack extends Stack {
 	constructor(scope: Construct, id: string, props?: StackProps) {
 		super(scope, id, props);
 
@@ -39,7 +39,7 @@ export class NodejsAWSShopBackendStack extends Stack {
 			{
 				functionName: "NodejsAWSShopGetProductsListLambda",
 				runtime: aws_lambda.Runtime.NODEJS_20_X,
-				code: aws_lambda.Code.fromAsset("lambdas"),
+				code: aws_lambda.Code.fromAsset("product-service/lambdas"),
 				handler: "get-products-list.getProductsList",
 				environment: {
 					PRODUCT_TABLE_NAME: productTable.tableName,
@@ -56,7 +56,7 @@ export class NodejsAWSShopBackendStack extends Stack {
 			{
 				functionName: "NodejsAWSShopGetProductByIdLambda",
 				runtime: aws_lambda.Runtime.NODEJS_20_X,
-				code: aws_lambda.Code.fromAsset("lambdas"),
+				code: aws_lambda.Code.fromAsset("product-service/lambdas"),
 				handler: "get-product-by-id.getProductById",
 				environment: {
 					PRODUCT_TABLE_NAME: productTable.tableName,
@@ -73,7 +73,7 @@ export class NodejsAWSShopBackendStack extends Stack {
 			{
 				functionName: "NodejsAWSShopCreateProductLambda",
 				runtime: aws_lambda.Runtime.NODEJS_20_X,
-				code: aws_lambda.Code.fromAsset("lambdas"),
+				code: aws_lambda.Code.fromAsset("product-service/lambdas"),
 				handler: "create-product.createProduct",
 				environment: {
 					PRODUCT_TABLE_NAME: productTable.tableName,
@@ -86,9 +86,9 @@ export class NodejsAWSShopBackendStack extends Stack {
 
 		const api = new aws_apigateway.LambdaRestApi(
 			this,
-			"NodejsAWSShopBackendApi",
+			"NodejsAWSShopProductServiceApi",
 			{
-				restApiName: "NodejsAWSShopBackendApi",
+				restApiName: "NodejsAWSShopProductServiceApi",
 				handler: getProductsListLambda,
 				proxy: false,
 				defaultCorsPreflightOptions: {
