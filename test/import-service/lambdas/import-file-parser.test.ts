@@ -5,7 +5,6 @@ import {
 	GetObjectCommand,
 	S3Client,
 } from "@aws-sdk/client-s3";
-import type { StreamingBlobPayloadOutputTypes } from "@smithy/types";
 import { sdkStreamMixin } from "@smithy/util-stream";
 import type { Context, S3Event } from "aws-lambda";
 import { mockClient } from "aws-sdk-client-mock";
@@ -26,7 +25,7 @@ describe("importFileParser", () => {
 	it("should process files correctly", async () => {
 		const mockReadStream = new Readable();
 		mockReadStream.push("name,age\nJohn Doe,30\nJane Doe,25");
-		mockReadStream.push(null); // End of stream
+		mockReadStream.push(null);
 		const sdkStream = sdkStreamMixin(mockReadStream);
 
 		s3Mock.on(GetObjectCommand).resolves({
