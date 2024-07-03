@@ -14,47 +14,54 @@ const s3Client = new S3Client({ region: BUCKET_REGION });
 export const importFileParser: S3Handler = async (event) => {
 	console.log("importFileParser event", event);
 
-	for (const record of event.Records) {
-		const { bucket, object } = record.s3;
+	try {
+		await Promise.all(
+			event.Records.map(async (record) => {
+				const { bucket, object } = record.s3;
 
-		try {
-			const { Body } = await s3Client.send(
-				new GetObjectCommand({
-					Bucket: bucket.name,
-					Key: object.key,
-				}),
-			);
-			const readableStream = Body as Readable;
+				const { Body } = await s3Client.send(
+					new GetObjectCommand({
+						Bucket: bucket.name,
+						Key: object.key,
+					}),
+				);
+				const readableStream = Body as Readable;
 
-			readableStream
-				.pipe(csv())
-				.on("data", console.log)
-				.on("end", async () => {
-					console.log(`CSV file ${object.key} processed`);
-
-					const destinationKey = object.key.replace("uploaded/", "parsed/");
-					await s3Client.send(
-						new CopyObjectCommand({
-							Bucket: bucket.name,
-							CopySource: `${bucket.name}/${object.key}`,
-							Key: destinationKey,
-						}),
-					);
-					console.log(`File copied to ${destinationKey}`);
-
-					await s3Client.send(
-						new DeleteObjectCommand({
-							Bucket: bucket.name,
-							Key: object.key,
-						}),
-					);
-					console.log(`File deleted from ${object.key}`);
-				})
-				.on("error", (error) => {
-					console.error("Error processing file:", error);
+				await new Promise((resolve, reject) => {
+					readableStream
+						.pipe(csv())
+						.on("data", console.log)
+						.on("end", async () => {
+							console.log(`CSV file ${object.key} processed`);
+							resolve(true);
+						})
+						.on("error", (error) => {
+							console.error("Error processing file:", error);
+							reject(error);
+						});
 				});
-		} catch (error) {
-			console.error("Error processing file:", error);
-		}
+
+				const destinationKey = object.key.replace("uploaded/", "parsed/");
+
+				await s3Client.send(
+					new CopyObjectCommand({
+						Bucket: bucket.name,
+						CopySource: `${bucket.name}/${object.key}`,
+						Key: destinationKey,
+					}),
+				);
+				console.log(`File copied to ${destinationKey}`);
+
+				await s3Client.send(
+					new DeleteObjectCommand({
+						Bucket: bucket.name,
+						Key: object.key,
+					}),
+				);
+				console.log(`File deleted from ${object.key}`);
+			}),
+		);
+	} catch (error) {
+		console.error("Error processing file:", error);
 	}
 };
