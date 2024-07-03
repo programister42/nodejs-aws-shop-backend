@@ -1,4 +1,4 @@
-import { Readable, Transform } from "node:stream";
+import { Readable } from "node:stream";
 import {
 	CopyObjectCommand,
 	DeleteObjectCommand,
@@ -6,46 +6,34 @@ import {
 	S3Client,
 } from "@aws-sdk/client-s3";
 import type { StreamingBlobPayloadOutputTypes } from "@smithy/types";
+import { sdkStreamMixin } from "@smithy/util-stream";
 import type { Context, S3Event } from "aws-lambda";
 import { mockClient } from "aws-sdk-client-mock";
-import { importFileParser } from "../../../import-service/lambdas/import-file-parser";
-import * as csv from "../../../import-service/lambdas/node_modules/csv-parser";
+import "aws-sdk-client-mock-jest";
 
-jest.mock("../../../import-service/lambdas/node_modules/csv-parser");
+import { importFileParser } from "../../../import-service/lambdas/import-file-parser";
 
 const s3Mock = mockClient(S3Client);
 
 describe("importFileParser", () => {
 	const context = {} as Context;
-	const callback = () => {};
+	const callback = jest.fn();
 
 	beforeEach(() => {
 		s3Mock.reset();
-		jest.clearAllMocks();
 	});
 
 	it("should process files correctly", async () => {
 		const mockReadStream = new Readable();
 		mockReadStream.push("name,age\nJohn Doe,30\nJane Doe,25");
 		mockReadStream.push(null); // End of stream
+		const sdkStream = sdkStreamMixin(mockReadStream);
 
 		s3Mock.on(GetObjectCommand).resolves({
-			Body: mockReadStream as StreamingBlobPayloadOutputTypes,
+			Body: sdkStream,
 		});
-
 		s3Mock.on(CopyObjectCommand).resolves({});
 		s3Mock.on(DeleteObjectCommand).resolves({});
-
-		const mockCsvParser = csv as jest.MockedFunction<typeof csv>;
-		mockCsvParser.mockImplementation(() => {
-			const transform = new Transform({ read() {}, transform() {} });
-			process.nextTick(() => {
-				transform.emit("data", { name: "John Doe", age: "30" });
-				transform.emit("data", { name: "Jane Doe", age: "25" });
-				transform.emit("end");
-			});
-			return transform;
-		});
 
 		const event = {
 			Records: [
@@ -60,7 +48,18 @@ describe("importFileParser", () => {
 
 		await importFileParser(event, context, callback);
 
-		expect(s3Mock.send).toHaveLength(3); // GetObject, CopyObject, DeleteObject
-		expect(mockCsvParser).toHaveBeenCalled();
+		expect(s3Mock).toHaveReceivedCommandWith(GetObjectCommand, {
+			Bucket: "test-bucket",
+			Key: "uploaded/test.csv",
+		});
+		expect(s3Mock).toHaveReceivedCommandWith(CopyObjectCommand, {
+			Bucket: "test-bucket",
+			CopySource: "test-bucket/uploaded/test.csv",
+			Key: "parsed/test.csv",
+		});
+		expect(s3Mock).toHaveReceivedCommandWith(DeleteObjectCommand, {
+			Bucket: "test-bucket",
+			Key: "uploaded/test.csv",
+		});
 	});
 });
