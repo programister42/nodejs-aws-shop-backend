@@ -6,8 +6,6 @@ import type {
 	Handler,
 } from "aws-lambda";
 
-import { createResponse } from "./shared/create-response";
-
 const ddbClient = new DynamoDBClient();
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 
@@ -21,7 +19,18 @@ export const getProductById: Handler = async (
 
 	try {
 		const { id } = event.pathParameters ?? {};
-		if (!id) return createResponse(400, { message: "Product ID is required" });
+		if (!id) {
+			return {
+				statusCode: 400,
+				headers: {
+					"Access-Control-Allow-Origin": "*",
+					"Access-Control-Allow-Methods": "GET",
+					"Access-Control-Allow-Headers": "Content-Type",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ message: "Product ID is required" }),
+			};
+		}
 
 		const getProductCommand = new GetCommand({
 			TableName: PRODUCT_TABLE_NAME,
@@ -37,16 +46,44 @@ export const getProductById: Handler = async (
 		const getStockResponse = await ddbDocClient.send(getStockCommand);
 		const stockItem = getStockResponse.Item;
 
-		if (!productItem || !stockItem)
-			return createResponse(404, { message: "Product not found" });
+		if (!productItem || !stockItem) {
+			return {
+				statusCode: 404,
+				headers: {
+					"Access-Control-Allow-Origin": "*",
+					"Access-Control-Allow-Methods": "GET",
+					"Access-Control-Allow-Headers": "Content-Type",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ message: "Product not found" }),
+			};
+		}
 
 		const product = {
 			...productItem,
 			count: stockItem.count,
 		};
 
-		return createResponse(200, product);
+		return {
+			statusCode: 200,
+			headers: {
+				"Access-Control-Allow-Origin": "*",
+				"Access-Control-Allow-Methods": "GET",
+				"Access-Control-Allow-Headers": "Content-Type",
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(product),
+		};
 	} catch (error: unknown) {
-		return createResponse(500, { message: "Internal server error" });
+		return {
+			statusCode: 500,
+			headers: {
+				"Access-Control-Allow-Origin": "*",
+				"Access-Control-Allow-Methods": "GET",
+				"Access-Control-Allow-Headers": "Content-Type",
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({ message: "Internal server error" }),
+		};
 	}
 };
