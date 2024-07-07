@@ -100,9 +100,9 @@ export class ImportServiceStack extends Stack {
 
 		const createProductTopic = new aws_sns.Topic(
 			this,
-			"NodejsAWSShopCreateProductTopic",
+			"NodejsAWSShopCreateProductSNSTopic",
 			{
-				topicName: "NodejsAWSShopCreateProductTopic",
+				topicName: "NodejsAWSShopCreateProductSNSTopic",
 			},
 		);
 		createProductTopic.addSubscription(
