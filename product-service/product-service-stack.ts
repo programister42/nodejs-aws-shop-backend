@@ -7,24 +7,21 @@ import {
 	aws_lambda,
 } from "aws-cdk-lib";
 import type { Construct } from "constructs";
+import { PRODUCT_TABLE, STOCK_TABLE } from "../shared/constants";
 
 export class ProductServiceStack extends Stack {
 	constructor(scope: Construct, id: string, props?: StackProps) {
 		super(scope, id, props);
 
-		const productTable = new aws_dynamodb.Table(
-			this,
-			"NodejsAWSShopProductTable",
-			{
-				tableName: "NodejsAWSShopProductTable",
-				partitionKey: { name: "id", type: aws_dynamodb.AttributeType.STRING },
-				billingMode: aws_dynamodb.BillingMode.PAY_PER_REQUEST,
-				removalPolicy: RemovalPolicy.DESTROY,
-			},
-		);
+		const productTable = new aws_dynamodb.Table(this, PRODUCT_TABLE.id, {
+			tableName: PRODUCT_TABLE.name,
+			partitionKey: { name: "id", type: aws_dynamodb.AttributeType.STRING },
+			billingMode: aws_dynamodb.BillingMode.PAY_PER_REQUEST,
+			removalPolicy: RemovalPolicy.DESTROY,
+		});
 
-		const stockTable = new aws_dynamodb.Table(this, "NodejsAWSShopStockTable", {
-			tableName: "NodejsAWSShopStockTable",
+		const stockTable = new aws_dynamodb.Table(this, STOCK_TABLE.id, {
+			tableName: STOCK_TABLE.name,
 			partitionKey: {
 				name: "product_id",
 				type: aws_dynamodb.AttributeType.STRING,

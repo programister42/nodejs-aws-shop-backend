@@ -8,12 +8,23 @@ import {
 	aws_lambda,
 	aws_lambda_event_sources,
 	aws_s3,
+	aws_sns,
+	aws_sns_subscriptions,
+	aws_sqs,
 } from "aws-cdk-lib";
 import type { Construct } from "constructs";
+import {
+	PRODUCT_TABLE,
+	SNS_HIGH_PRICE_SUBSCRIPTION_EMAIL,
+	SNS_SUBSCRIPTION_EMAIL,
+	STOCK_TABLE,
+} from "../shared/constants";
 
 export class ImportServiceStack extends Stack {
 	constructor(scope: Construct, id: string, props?: StackProps) {
 		super(scope, id, props);
+
+		// Bucket configuration
 
 		const bucket = new aws_s3.Bucket(
 			this,
@@ -40,6 +51,74 @@ export class ImportServiceStack extends Stack {
 				},
 			],
 		});
+		const s3EventSource = new aws_lambda_event_sources.S3EventSource(bucket, {
+			events: [aws_s3.EventType.OBJECT_CREATED],
+			filters: [{ prefix: "uploaded/" }],
+		});
+
+		// API configuration
+
+		const api = new aws_apigateway.RestApi(
+			this,
+			"NodejsAWSShopImportServiceApi",
+			{
+				restApiName: "NodejsAWSShopImportServiceApi",
+			},
+		);
+		const importResource = api.root.addResource("import");
+
+		// DynamoDB configuration
+
+		const productTable = aws_dynamodb.Table.fromTableName(
+			this,
+			PRODUCT_TABLE.id,
+			PRODUCT_TABLE.name,
+		);
+		const stockTable = aws_dynamodb.Table.fromTableName(
+			this,
+			STOCK_TABLE.id,
+			STOCK_TABLE.name,
+		);
+
+		// SQS configuration
+
+		const catalogItemsQueue = new aws_sqs.Queue(
+			this,
+			"NodejsAWSShopCatalogItemsQueue",
+			{
+				queueName: "NodejsAWSShopCatalogItemsQueue",
+			},
+		);
+		const sqsEventSource = new aws_lambda_event_sources.SqsEventSource(
+			catalogItemsQueue,
+			{
+				batchSize: 5,
+			},
+		);
+
+		// SNS configuration
+
+		const createProductTopic = new aws_sns.Topic(
+			this,
+			"NodejsAWSShopCreateProductSNSTopic",
+		);
+		createProductTopic.addSubscription(
+			new aws_sns_subscriptions.EmailSubscription(SNS_SUBSCRIPTION_EMAIL),
+		);
+		createProductTopic.addSubscription(
+			new aws_sns_subscriptions.EmailSubscription(
+				SNS_HIGH_PRICE_SUBSCRIPTION_EMAIL,
+				{
+					filterPolicy: {
+						price: aws_sns.SubscriptionFilter.numericFilter({
+							greaterThanOrEqualTo: 100500,
+						}),
+					},
+				},
+			),
+		);
+
+		// Lambdas configuration
 
 		const importProductsFileLambda = new aws_lambda.Function(
 			this,
@@ -56,16 +135,6 @@ export class ImportServiceStack extends Stack {
 			},
 		);
 		bucket.grantReadWrite(importProductsFileLambda);
-
-		const api = new aws_apigateway.RestApi(
-			this,
-			"NodejsAWSShopImportServiceApi",
-			{
-				restApiName: "NodejsAWSShopImportServiceApi",
-			},
-		);
-
-		const importResource = api.root.addResource("import");
 		importResource.addMethod(
 			"GET",
 			new aws_apigateway.LambdaIntegration(importProductsFileLambda),
@@ -85,17 +154,33 @@ export class ImportServiceStack extends Stack {
 				handler: "import-file-parser.importFileParser",
 				code: aws_lambda.Code.fromAsset("import-service/lambdas"),
 				environment: {
-					BUCKET_REGION: this.region,
+					SQS_URL: catalogItemsQueue.queueUrl,
 				},
 			},
 		);
 		bucket.grantReadWrite(importFileParserLambda);
 		bucket.grantDelete(importFileParserLambda);
-
-		const s3EventSource = new aws_lambda_event_sources.S3EventSource(bucket, {
-			events: [aws_s3.EventType.OBJECT_CREATED],
-			filters: [{ prefix: "uploaded/" }],
-		});
+		catalogItemsQueue.grantSendMessages(importFileParserLambda);
 		importFileParserLambda.addEventSource(s3EventSource);
+
+		const catalogBatchProcessLambda = new aws_lambda.Function(
+			this,
+			"NodejsAWSShopCatalogBatchProcessLambda",
+			{
+				functionName: "NodejsAWSShopCatalogBatchProcessLambda",
+				runtime: aws_lambda.Runtime.NODEJS_20_X,
+				handler: "catalog-batch-process.catalogBatchProcess",
+				code: aws_lambda.Code.fromAsset("import-service/lambdas"),
+				environment: {
+					TOPIC_ARN: createProductTopic.topicArn,
+					PRODUCT_TABLE_NAME: productTable.tableName,
+					STOCK_TABLE_NAME: stockTable.tableName,
+				},
+			},
+		);
+		productTable.grantWriteData(catalogBatchProcessLambda);
+		stockTable.grantWriteData(catalogBatchProcessLambda);
+		createProductTopic.grantPublish(catalogBatchProcessLambda);
+		catalogBatchProcessLambda.addEventSource(sqsEventSource);
 	}
 }
