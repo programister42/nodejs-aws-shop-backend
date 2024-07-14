@@ -9,3 +9,4 @@ cdk.out
 
 # misc
 .idea
+.env
