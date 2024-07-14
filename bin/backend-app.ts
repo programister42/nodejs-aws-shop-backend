@@ -2,6 +2,7 @@
 import "source-map-support/register";
 import { App } from "aws-cdk-lib";
 
+import { AuthorizationServiceStack } from "../authorization-service/authorization-service-stack";
 import { ImportServiceStack } from "../import-service/import-service-stack";
 import { ProductServiceStack } from "../product-service/product-service-stack";
 
@@ -19,3 +20,8 @@ new ProductServiceStack(app, "NodejsAWSShopProductServiceStack", {
 	/* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
 });
 new ImportServiceStack(app, "NodejsAWSShopImportServiceStack", {});
+new AuthorizationServiceStack(
+	app,
+	"NodejsAWSShopAuthorizationServiceStack",
+	{},
+);
