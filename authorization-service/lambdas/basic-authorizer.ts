@@ -11,24 +11,33 @@ export const basicAuthorizer = async (
 	console.log("basicAuthorizer event", event);
 
 	const authorizationToken = event.authorizationToken;
-	let effect: GeneratePolicyEffect = "Allow";
 
-	if (!authorizationToken) {
-		effect = "Deny";
+	const encodedCredentials = authorizationToken.split(" ").pop();
+	if (!encodedCredentials) {
+		return generatePolicy("undefined", "Deny", event.methodArn);
 	}
 
-	const encodedCredentials = authorizationToken.split(" ")[1];
-	const decodedCredentials = Buffer.from(encodedCredentials, "base64").toString(
-		"utf-8",
-	);
-	const [username, password] = decodedCredentials.split("=");
+	let decodedCredentials: string;
+	try {
+		decodedCredentials = Buffer.from(encodedCredentials, "base64").toString(
+			"utf-8",
+		);
+	} catch (error) {
+		console.error("Error decoding credentials:", error);
+		return generatePolicy("undefined", "Deny", event.methodArn);
+	}
+
+	const [username, password] = decodedCredentials.split(":");
+	if (!username || !password) {
+		return generatePolicy("undefined", "Deny", event.methodArn);
+	}
+
 	const expectedPassword = process.env[username];
-
 	if (password !== expectedPassword) {
-		effect = "Deny";
+		return generatePolicy(username, "Deny", event.methodArn);
 	}
 
-	return generatePolicy(username, effect, event.methodArn);
+	return generatePolicy(username, "Allow", event.methodArn);
 };
 
 const generatePolicy = (
