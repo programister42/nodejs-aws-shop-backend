@@ -12,8 +12,10 @@ import {
 	aws_sns_subscriptions,
 	aws_sqs,
 } from "aws-cdk-lib";
+import { TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 import type { Construct } from "constructs";
 import {
+	BASIC_AUTHORIZER_LAMBDA_NAME,
 	PRODUCT_TABLE,
 	SNS_HIGH_PRICE_SUBSCRIPTION_EMAIL,
 	SNS_SUBSCRIPTION_EMAIL,
@@ -63,6 +65,31 @@ export class ImportServiceStack extends Stack {
 			"NodejsAWSShopImportServiceApi",
 			{
 				restApiName: "NodejsAWSShopImportServiceApi",
+				defaultCorsPreflightOptions: {
+					allowOrigins: aws_apigateway.Cors.ALL_ORIGINS,
+					allowMethods: aws_apigateway.Cors.ALL_METHODS,
+					allowHeaders: aws_apigateway.Cors.DEFAULT_HEADERS,
+				},
+			},
+		);
+		api.addGatewayResponse(
+			"NodejsAWSShopImportServiceGatewayResponseUnauthorized",
+			{
+				type: aws_apigateway.ResponseType.UNAUTHORIZED,
+				responseHeaders: {
+					"Access-Control-Allow-Origin": "'*'",
+					"Content-Type": "'application/json'",
+				},
+			},
+		);
+		api.addGatewayResponse(
+			"NodejsAWSShopImportServiceGatewayResponseDefaultForbidden",
+			{
+				type: aws_apigateway.ResponseType.ACCESS_DENIED,
+				responseHeaders: {
+					"Access-Control-Allow-Origin": "'*'",
+					"Content-Type": "'application/json'",
+				},
 			},
 		);
 		const importResource = api.root.addResource("import");
@@ -120,6 +147,21 @@ export class ImportServiceStack extends Stack {
 
 		// Lambdas configuration
 
+		const basicAuthorizerLambda = aws_lambda.Function.fromFunctionName(
+			this,
+			BASIC_AUTHORIZER_LAMBDA_NAME,
+			BASIC_AUTHORIZER_LAMBDA_NAME,
+		);
+		const basicTokenAuthorizer = new TokenAuthorizer(
+			this,
+			"NodejsAWSShopBasicTokenAuthorizer",
+			{
+				authorizerName: "NodejsAWSShopBasicTokenAuthorizer",
+				handler: basicAuthorizerLambda,
+				identitySource: "method.request.header.Authorization",
+			},
+		);
+
 		const importProductsFileLambda = new aws_lambda.Function(
 			this,
 			"NodejsAWSShopImportProductsFileLambda",
@@ -139,6 +181,8 @@ export class ImportServiceStack extends Stack {
 			"GET",
 			new aws_apigateway.LambdaIntegration(importProductsFileLambda),
 			{
+				authorizer: basicTokenAuthorizer,
+				authorizationType: aws_apigateway.AuthorizationType.CUSTOM,
 				requestParameters: {
 					"method.request.querystring.name": true,
 				},
